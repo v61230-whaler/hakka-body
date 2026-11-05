@@ -39,7 +39,6 @@ h1{font-size:20px;margin:4px 0 8px;text-align:center}
 @keyframes dash{to{stroke-dashoffset:-24}}
 .lines line{stroke:#ff8a5b;stroke-width:2.5;stroke-linecap:round}
 .lines circle{fill:#ff8a5b}
-.lines .corr{stroke:transparent;stroke-width:30;stroke-linecap:round;pointer-events:stroke;cursor:pointer}
 .chip{position:absolute;width:21.6%;min-width:92px;background:var(--card);border:2.5px solid var(--accent);
   border-radius:14px;padding:5px 6px 6px;text-align:center;font:inherit;color:var(--ink);cursor:pointer;
   box-shadow:0 3px 0 rgba(217,104,58,.35);animation:pop .18s ease-out}
@@ -320,7 +319,11 @@ function draw(){
       hoverTimer=setTimeout(()=>select(el.dataset.key),260);   // 滑鼠只是經過就不換
     });
     el.addEventListener("pointerleave",()=>clearTimeout(hoverTimer));
-    el.addEventListener("click",()=>{ if(state.mode==="learn") select(el.dataset.key); });
+    el.addEventListener("click",()=>{                      // 點(或手指點)部位:顯示詞、拼音並發音,再點可重聽
+      if(state.mode!=="learn") return;
+      const key=el.dataset.key;
+      state.selected=key; state.revealed[key]=true; refresh(); play(key);
+    });
   });
   refresh();
 }
@@ -355,7 +358,6 @@ function refresh(){
     chips += `<button class="chip ${c.side}${state.mode==="answer"&&state.show==="py"?" pyonly":""}" data-key="${key}" style="top:${top}%">${body}</button>`;
     const x = c.side==="left" ? 112 : 388;
     lines += `<line x1="${x}" y1="${c.y}" x2="${c.ax}" y2="${c.ay}"/><circle cx="${c.ax}" cy="${c.ay}" r="5"/>`;
-    if(state.mode==="learn") lines += `<line class="corr" data-key="${key}" x1="${x}" y1="${c.y}" x2="${c.ax}" y2="${c.ay}"/>`;
   });
   chipsEl.innerHTML = chips;
   lineSvg.innerHTML = lines;
@@ -365,12 +367,8 @@ function refresh(){
     if(state.mode==="learn"){ state.revealed[key]=true; refresh(); }
     play(key);
   }));
-  lineSvg.querySelectorAll(".corr").forEach(l=>l.addEventListener("click",ev=>{
-    ev.stopPropagation(); const key=l.dataset.key;
-    state.revealed[key]=true; refresh(); play(key);
-  }));
   $("#hint").textContent = state.mode==="learn"
-    ? (state.selected ? "沿著線移到文字,點一下看拼音並聽發音" : "把滑鼠移到(或用手指點)身體的部位")
+    ? (state.selected ? "點一下部位或文字,可以再聽一次發音" : "點一下(或把滑鼠移到)身體的部位,看拼音並聽發音")
     : "選「客語」或「音標」,全部一次顯示;也可以點文字聽發音";
 }
 
